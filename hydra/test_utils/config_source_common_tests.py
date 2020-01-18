@@ -9,7 +9,12 @@ from hydra.plugins.config_source import ConfigLoadError, ConfigSource
 
 class ConfigSourceTestSuite:
     def test_source_load_config(self, type_: Type[ConfigSource], path: str) -> None:
+        assert issubclass(type_, ConfigSource)
         src = type_(provider="foo", path=path)
+
+        assert src.load_config(config_path="config_without_group.yaml").config == {
+            "group": False
+        }
 
         assert src.load_config(config_path="dataset/imagenet.yaml").config == {
             "dataset": {"name": "imagenet", "path": "/datasets/imagenet"}
@@ -22,10 +27,6 @@ class ConfigSourceTestSuite:
         assert src.load_config(
             config_path="dataset/config_without_extension"
         ).config == {"foo": "bar"}
-
-        assert src.load_config(config_path="config_without_group.yaml").config == {
-            "group": False
-        }
 
         with pytest.raises(ConfigLoadError):
             src.load_config(config_path="dataset/not_found.yaml")
