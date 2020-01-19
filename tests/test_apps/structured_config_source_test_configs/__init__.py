@@ -47,16 +47,12 @@ class Optimizer:
 
 
 store = StructuredConfigStore.instance()
-store.add(path="", name="config_without_group.yaml", node=ConfigWithoutGroup)
+store.add(path="", name="config_without_group", node=ConfigWithoutGroup)
 
 
 store.mkdir(dir_path="dataset")
-store.add(
-    path="dataset", name="cifar10.yaml", node=OmegaConf.create({"dataset": Cifar10})
-)
-store.add(
-    path="dataset", name="imagenet.yaml", node=OmegaConf.create({"dataset": ImageNet})
-)
+store.add(path="dataset", name="cifar10", node=OmegaConf.create({"dataset": Cifar10}))
+store.add(path="dataset", name="imagenet", node=OmegaConf.create({"dataset": ImageNet}))
 store.add(path="dataset", name="config_without_extension", node=ConfigWithoutExt)
 
 store.mkdir(dir_path="optimizer")

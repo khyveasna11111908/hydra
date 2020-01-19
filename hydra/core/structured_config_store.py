@@ -5,6 +5,7 @@ from hydra.core.object_type import ObjectType
 from hydra.core.singleton import Singleton
 from hydra.plugins.config_source import ConfigLoadError
 from omegaconf import DictConfig, OmegaConf
+from os.path import splitext
 
 
 class StructuredConfigStore(metaclass=Singleton):
@@ -71,11 +72,24 @@ class StructuredConfigStore(metaclass=Singleton):
             return d
 
         for frag in path.split("/"):
+            filename_no_ext, ext = splitext(frag)
             if frag == "":
                 continue
-            if frag not in d:
+
+            candidates = [frag]
+            if ext is not "":
+                candidates.insert(0, filename_no_ext)
+            match = None
+            for candidate in candidates:
+                if candidate in d:
+                    match = d[candidate]
+                    break
+
+            if match is None:
                 return None
-            d = d[frag]
+            else:
+                d = match
+
         return d
 
     @staticmethod

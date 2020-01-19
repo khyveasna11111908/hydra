@@ -13,10 +13,6 @@ from hydra.core.plugins import Plugins
 from hydra.test_utils.config_source_common_tests import ConfigSourceTestSuite
 from hydra.test_utils.test_utils import chdir_hydra_root
 
-# TODO : decide on this.
-# noinspection PyUnresolvedReferences
-# import tests.test_apps.structured_config_source_test_configs
-
 chdir_hydra_root()
 
 Plugins.register_config_sources()

@@ -12,15 +12,15 @@ class ConfigSourceTestSuite:
         assert issubclass(type_, ConfigSource)
         src = type_(provider="foo", path=path)
 
-        assert src.load_config(config_path="config_without_group.yaml").config == {
+        assert src.load_config(config_path="config_without_group").config == {
             "group": False
         }
 
-        assert src.load_config(config_path="dataset/imagenet.yaml").config == {
+        assert src.load_config(config_path="dataset/imagenet").config == {
             "dataset": {"name": "imagenet", "path": "/datasets/imagenet"}
         }
 
-        assert src.load_config(config_path="dataset/cifar10.yaml").config == {
+        assert src.load_config(config_path="dataset/cifar10").config == {
             "dataset": {"name": "cifar10", "path": "/datasets/cifar10"}
         }
 
@@ -29,7 +29,7 @@ class ConfigSourceTestSuite:
         ).config == {"foo": "bar"}
 
         with pytest.raises(ConfigLoadError):
-            src.load_config(config_path="dataset/not_found.yaml")
+            src.load_config(config_path="dataset/not_found")
 
     def test_source_file_exists(self, type_: Type[ConfigSource], path: str) -> None:
         src = type_(provider="foo", path=path)
