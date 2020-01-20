@@ -49,7 +49,7 @@ class ConfigRepository:
     def _find_config(self, config_path: str) -> Optional[ConfigSource]:
         found_source = None
         for source in self.sources:
-            if source.is_config(config_path):
+            if source.exists(config_path):
                 found_source = source
                 break
         return found_source

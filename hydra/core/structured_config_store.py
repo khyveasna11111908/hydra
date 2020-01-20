@@ -20,7 +20,8 @@ class StructuredConfigStore(metaclass=Singleton):
         self.store[dir_path] = {}
 
     def add(self, path: str, name: str, node: Any) -> None:
-        fqfn = f"{name}.config"
+        # add a virtual file extension to configs
+        fqfn = f"{name}.yaml"
         d = self._open(path)
         if d is None or not isinstance(d, dict):
             raise ConfigLoadError(f"Error adding {path}")

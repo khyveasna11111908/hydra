@@ -109,9 +109,8 @@ class PackageConfigSource(ConfigSource):
             return path2
 
     @staticmethod
-    def _normalize_file_name(filename):
-        # strips any extension and adds .yaml
+    def _normalize_file_name(filename: str) -> str:
         idx = filename.rfind(".")
-        if idx != -1:
-            filename = filename[0:idx]
-        return filename + ".yaml"
+        if idx == -1:
+            filename += ".yaml"
+        return filename

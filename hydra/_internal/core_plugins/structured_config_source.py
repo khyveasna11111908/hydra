@@ -59,8 +59,7 @@ class StructuredConfigSource(ConfigSource):
 
     @staticmethod
     def _normalize_file_name(filename):
-        # strips any extension and adds .config
         idx = filename.rfind(".")
-        if idx != -1:
-            filename = filename[0:idx]
-        return filename + ".config"
+        if idx == -1:
+            filename += ".yaml"
+        return filename

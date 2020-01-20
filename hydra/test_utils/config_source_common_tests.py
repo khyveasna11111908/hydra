@@ -37,7 +37,7 @@ class ConfigSourceTestSuite:
             ("optimizer", False),
             ("dataset/imagenet", True),
             ("dataset/imagenet.yaml", True),
-            ("dataset/imagenet.foobar", True),
+            ("dataset/imagenet.foobar", False),
             ("not_found", False),
         ],
     )

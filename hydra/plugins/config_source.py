@@ -42,6 +42,10 @@ class ConfigSource(Plugin):
     def load_config(self, config_path: str) -> ConfigResult:
         ...
 
+    # subclasses may override to improve performance
+    def exists(self, config_path: str) -> bool:
+        return self.is_group(config_path) or self.is_config(config_path)
+
     @abstractmethod
     def is_group(self, config_path: str) -> bool:
         ...
@@ -58,7 +62,7 @@ class ConfigSource(Plugin):
         return repr(self)
 
     def __repr__(self) -> str:
-        return f"provider={self.provider}, path={self.path}"
+        return f"provider={self.provider}, path={self.scheme()}://{self.path}"
 
     def _list_add_result(
         self,
