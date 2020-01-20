@@ -5,7 +5,6 @@ from hydra.core.object_type import ObjectType
 from hydra.core.singleton import Singleton
 from hydra.plugins.config_source import ConfigLoadError
 from omegaconf import DictConfig, OmegaConf
-from os.path import splitext
 
 
 class StructuredConfigStore(metaclass=Singleton):
@@ -21,11 +20,15 @@ class StructuredConfigStore(metaclass=Singleton):
         self.store[dir_path] = {}
 
     def add(self, path: str, name: str, node: Any) -> None:
+        fqfn = f"{name}.config"
         d = self._open(path)
-        if d is None or not isinstance(d, dict) or name in d:
+        if d is None or not isinstance(d, dict):
             raise ConfigLoadError(f"Error adding {path}")
 
-        d[name] = OmegaConf.structured(node)
+        if fqfn in d:
+            raise IOError(f"Config {fqfn} is already in {path}")
+
+        d[fqfn] = OmegaConf.structured(node)
 
     def load(self, config_path: str) -> DictConfig:
         idx = config_path.rfind("/")
@@ -40,8 +43,13 @@ class StructuredConfigStore(metaclass=Singleton):
             path = config_path[0:idx]
             name = config_path[idx + 1 :]
             d = self._open(path)
-            if d is None or not isinstance(d, dict) or name not in d:
+            if d is None or not isinstance(d, dict):
                 raise ConfigLoadError(f"Structured config not found {config_path}")
+
+            if name not in d:
+                raise ConfigLoadError(
+                    f"Structured config {name} not found in {config_path}"
+                )
 
             ret = d[name]
             assert isinstance(ret, DictConfig)
@@ -72,24 +80,12 @@ class StructuredConfigStore(metaclass=Singleton):
             return d
 
         for frag in path.split("/"):
-            filename_no_ext, ext = splitext(frag)
             if frag == "":
                 continue
-
-            candidates = [frag]
-            if ext is not "":
-                candidates.insert(0, filename_no_ext)
-            match = None
-            for candidate in candidates:
-                if candidate in d:
-                    match = d[candidate]
-                    break
-
-            if match is None:
-                return None
+            if frag in d:
+                d = d[frag]
             else:
-                d = match
-
+                return None
         return d
 
     @staticmethod

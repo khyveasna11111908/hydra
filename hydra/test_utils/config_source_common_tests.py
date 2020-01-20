@@ -8,6 +8,74 @@ from hydra.plugins.config_source import ConfigLoadError, ConfigSource
 
 
 class ConfigSourceTestSuite:
+    @pytest.mark.parametrize(  # type: ignore
+        "config_path, expected",
+        [
+            ("", True),
+            ("dataset", True),
+            ("optimizer", True),
+            ("dataset/imagenet", False),
+            ("not_found", False),
+        ],
+    )
+    def test_is_group(
+        self,
+        type_: Type[ConfigSource],
+        path: str,
+        config_path: str,
+        expected: List[str],
+    ) -> None:
+        src = type_(provider="foo", path=path)
+        ret = src.is_group(config_path=config_path)
+        assert ret == expected
+
+    @pytest.mark.parametrize(  # type: ignore
+        "config_path, expected",
+        [
+            ("", False),
+            ("dataset", True),
+            ("optimizer", False),
+            ("dataset/imagenet", True),
+            ("dataset/imagenet.yaml", True),
+            ("dataset/imagenet.foobar", True),
+            ("not_found", False),
+        ],
+    )
+    def test_is_config(
+        self,
+        type_: Type[ConfigSource],
+        path: str,
+        config_path: str,
+        expected: List[str],
+    ) -> None:
+        src = type_(provider="foo", path=path)
+        ret = src.is_config(config_path=config_path)
+        assert ret == expected
+
+    @pytest.mark.parametrize(  # type: ignore
+        "config_path,results_filter,expected",
+        [
+            # one dataset is config, and one is group
+            # ("", None, ["config_without_group", "dataset", "dataset", "optimizer"]),
+            ("", ObjectType.GROUP, ["dataset", "optimizer"]),
+            ("", ObjectType.CONFIG, ["config_without_group", "dataset"]),
+            ("dataset", None, ["cifar10", "imagenet"]),
+            ("dataset", ObjectType.GROUP, []),
+            ("dataset", ObjectType.CONFIG, ["cifar10", "imagenet"],),
+        ],
+    )
+    def test_source_list(
+        self,
+        type_: Type[ConfigSource],
+        path: str,
+        config_path: str,
+        results_filter: Optional[ObjectType],
+        expected: List[str],
+    ) -> None:
+        src = type_(provider="foo", path=path)
+        ret = src.list(config_path=config_path, results_filter=results_filter)
+        assert ret == expected
+
     def test_source_load_config(self, type_: Type[ConfigSource], path: str) -> None:
         assert issubclass(type_, ConfigSource)
         src = type_(provider="foo", path=path)
@@ -24,52 +92,5 @@ class ConfigSourceTestSuite:
             "dataset": {"name": "cifar10", "path": "/datasets/cifar10"}
         }
 
-        assert src.load_config(
-            config_path="dataset/config_without_extension"
-        ).config == {"foo": "bar"}
-
         with pytest.raises(ConfigLoadError):
             src.load_config(config_path="dataset/not_found")
-
-    def test_source_file_exists(self, type_: Type[ConfigSource], path: str) -> None:
-        src = type_(provider="foo", path=path)
-
-        assert src.exists("dataset/config_without_extension")
-        assert src.exists("dataset/imagenet.yaml")
-        assert not src.exists("not_there.yaml")
-
-    def test_source_file_type(self, type_: Type[ConfigSource], path: str) -> None:
-        src = type_(provider="foo", path=path)
-
-        assert src.get_type("dataset/imagenet.yaml") == ObjectType.CONFIG
-        assert src.get_type("dataset/config_without_extension") == ObjectType.CONFIG
-        assert src.get_type("dataset") == ObjectType.GROUP
-        assert src.get_type("dataset/") == ObjectType.GROUP
-        assert src.get_type("not_found") == ObjectType.NOT_FOUND
-
-    @pytest.mark.parametrize(  # type: ignore
-        "config_path,results_filter,expected",
-        [
-            ("", None, ["config_without_group", "dataset", "optimizer"]),
-            ("", ObjectType.GROUP, ["dataset", "optimizer"]),
-            ("", ObjectType.CONFIG, ["config_without_group"]),
-            ("dataset", None, ["cifar10", "config_without_extension", "imagenet"]),
-            ("dataset", ObjectType.GROUP, []),
-            (
-                "dataset",
-                ObjectType.CONFIG,
-                ["cifar10", "config_without_extension", "imagenet"],
-            ),
-        ],
-    )
-    def test_source_list(
-        self,
-        type_: Type[ConfigSource],
-        path: str,
-        config_path: str,
-        results_filter: Optional[ObjectType],
-        expected: List[str],
-    ) -> None:
-        src = type_(provider="foo", path=path)
-        ret = src.list(config_path=config_path, results_filter=results_filter)
-        assert ret == expected

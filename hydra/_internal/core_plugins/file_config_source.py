@@ -18,38 +18,25 @@ class FileConfigSource(ConfigSource):
     def scheme() -> str:
         return "file"
 
-    def _resolve(self, config_path: str) -> Optional[str]:
-        full_path = os.path.realpath(os.path.join(self.path, config_path))
-        full_path_yaml = full_path + ".yaml"
-        candidates = [full_path_yaml, full_path]
-        for candidate in candidates:
-            if os.path.exists(candidate):
-                return candidate
-
-        return None
-
     def load_config(self, config_path: str) -> ConfigResult:
-        full_path = self._resolve(config_path)
-        if full_path is None:
-            raise ConfigLoadError(f"FileConfigSource: Config not found : {config_path}")
+        config_path = self._normalize_file_name(config_path)
+        full_path = os.path.realpath(os.path.join(self.path, config_path))
+        if not os.path.exists(full_path):
+            raise ConfigLoadError(f"FileConfigSource: Config not found : {full_path}")
         return ConfigResult(
             config=OmegaConf.load(full_path),
             path=f"{self.scheme()}://{self.path}",
             provider=self.provider,
         )
 
-    def exists(self, config_path: str) -> bool:
-        return self._resolve(config_path) is not None
+    def is_group(self, config_path: str) -> bool:
+        full_path = os.path.realpath(os.path.join(self.path, config_path))
+        return os.path.isdir(full_path)
 
-    def get_type(self, config_path: str) -> ObjectType:
-        full_path = self._resolve(config_path)
-        if full_path is not None:
-            if os.path.isdir(full_path):
-                return ObjectType.GROUP
-            else:
-                return ObjectType.CONFIG
-        else:
-            return ObjectType.NOT_FOUND
+    def is_config(self, config_path: str) -> bool:
+        config_path = self._normalize_file_name(config_path)
+        full_path = os.path.realpath(os.path.join(self.path, config_path))
+        return os.path.isfile(full_path)
 
     def list(self, config_path: str, results_filter: Optional[ObjectType]) -> List[str]:
         files: List[str] = []
@@ -64,3 +51,11 @@ class FileConfigSource(ConfigSource):
             )
 
         return sorted(files)
+
+    @staticmethod
+    def _normalize_file_name(filename):
+        # strips any extension and adds .yaml
+        idx = filename.rfind(".")
+        if idx != -1:
+            filename = filename[0:idx]
+        return filename + ".yaml"

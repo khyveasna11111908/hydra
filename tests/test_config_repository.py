@@ -68,14 +68,10 @@ class TestConfigRepository:
         [
             ("", None, ["config_without_group", "dataset", "optimizer"]),
             ("", ObjectType.GROUP, ["dataset", "optimizer"]),
-            ("", ObjectType.CONFIG, ["config_without_group"]),
-            ("dataset", None, ["cifar10", "config_without_extension", "imagenet"]),
+            ("", ObjectType.CONFIG, ["config_without_group", "dataset"]),
+            ("dataset", None, ["cifar10", "imagenet"]),
             ("dataset", ObjectType.GROUP, []),
-            (
-                "dataset",
-                ObjectType.CONFIG,
-                ["cifar10", "config_without_extension", "imagenet"],
-            ),
+            ("dataset", ObjectType.CONFIG, ["cifar10", "imagenet"],),
         ],
     )
     def test_config_repository_list(

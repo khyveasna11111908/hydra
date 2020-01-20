@@ -21,35 +21,23 @@ class PackageConfigSource(ConfigSource):
     def scheme() -> str:
         return "pkg"
 
-    def _resolve(self, config_path: str) -> Tuple[Optional[str], Optional[str]]:
-        full_path = f"{self.path}/{config_path}"
-        full_path_yaml = full_path + ".yaml"
-        candidates = [full_path_yaml, full_path]
-        for candidate in candidates:
-            module_name, resource_name = PackageConfigSource._split_module_and_resource(
-                candidate
-            )
-            if self._exists(module_name, resource_name):
-                return module_name, resource_name
-
-        return None, None
-
     def load_config(self, config_path: str) -> ConfigResult:
-        module_name, resource_name = self._resolve(config_path)
-        if module_name is None:
+        config_path = self._normalize_file_name(filename=config_path)
+        module_name, resource_name = PackageConfigSource._split_module_and_resource(
+            self.concat(self.path, config_path)
+        )
+
+        try:
+            with resource_stream(module_name, resource_name) as stream:
+                return ConfigResult(
+                    config=OmegaConf.load(stream),
+                    path=f"{self.scheme()}://{self.path}",
+                    provider=self.provider,
+                )
+        except FileNotFoundError:
             raise ConfigLoadError(
-                f"PackageConfigSource: Config not found: {config_path}"
+                f"PackageConfigSource: Config not found: module={module_name}, resource_name={resource_name}"
             )
-
-        with resource_stream(module_name, resource_name) as stream:
-            return ConfigResult(
-                config=OmegaConf.load(stream),
-                path=f"{self.scheme()}://{self.path}",
-                provider=self.provider,
-            )
-
-    def exists(self, config_path: str) -> bool:
-        return self.get_type(config_path=config_path) != ObjectType.NOT_FOUND
 
     @staticmethod
     def _exists(module_name, resource_name):
@@ -62,24 +50,23 @@ class PackageConfigSource(ConfigSource):
             return False
         return False
 
-    def get_type(self, config_path: str) -> ObjectType:
-        module_name, resource_name = self._resolve(config_path)
-        if module_name is None:
-            return ObjectType.NOT_FOUND
+    def is_group(self, config_path: str) -> bool:
+        module_name, resource_name = PackageConfigSource._split_module_and_resource(
+            self.concat(self.path, config_path)
+        )
+        return self._exists(module_name, resource_name) and resource_isdir(
+            module_name, resource_name
+        )
 
-        try:
-            if resource_isdir(module_name, resource_name):
-                return ObjectType.GROUP
-            else:
-                return ObjectType.CONFIG
-        except NotImplementedError:
-            raise NotImplementedError(
-                "Unable to load {}/{}, are you missing an __init__.py?".format(
-                    module_name, resource_name
-                )
-            )
-        except ImportError:
-            return ObjectType.NOT_FOUND
+    def is_config(self, config_path: str) -> bool:
+        config_path = self._normalize_file_name(filename=config_path)
+        fname = self.concat(self.path, config_path)
+        module_name, resource_name = PackageConfigSource._split_module_and_resource(
+            fname
+        )
+        return self._exists(module_name, resource_name) and not resource_isdir(
+            module_name, resource_name
+        )
 
     def list(self, config_path: str, results_filter: Optional[ObjectType]) -> List[str]:
         files: List[str] = []
@@ -120,3 +107,11 @@ class PackageConfigSource(ConfigSource):
             return f"{path1}/{path2}"
         else:
             return path2
+
+    @staticmethod
+    def _normalize_file_name(filename):
+        # strips any extension and adds .yaml
+        idx = filename.rfind(".")
+        if idx != -1:
+            filename = filename[0:idx]
+        return filename + ".yaml"

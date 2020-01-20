@@ -43,12 +43,14 @@ class ConfigSource(Plugin):
         ...
 
     @abstractmethod
-    def exists(self, config_path: str) -> bool:
+    def is_group(self, config_path: str) -> bool:
         ...
 
-    def get_type(self, config_path: str) -> ObjectType:
+    @abstractmethod
+    def is_config(self, config_path: str) -> bool:
         ...
 
+    # TODO: split into list_configs and list_groups ?
     def list(self, config_path: str, results_filter: Optional[ObjectType]) -> List[str]:
         ...
 
@@ -66,23 +68,26 @@ class ConfigSource(Plugin):
         results_filter: Optional[ObjectType],
     ) -> None:
         filtered = ["__pycache__", "__init__.py"]
-        file_type = self.get_type(file_path)
-        assert file_type is not ObjectType.NOT_FOUND
+        is_group = self.is_group(file_path)
+        is_config = self.is_config(file_path)
         if (
-            file_type == ObjectType.GROUP
+            is_group
             and (results_filter is None or results_filter == ObjectType.GROUP)
             and file_name not in filtered
         ):
             files.append(file_name)
         if (
-            file_type == ObjectType.CONFIG
+            is_config
             and file_name not in filtered
             and (results_filter is None or results_filter == ObjectType.CONFIG)
         ):
+            # strip extension
             last_dot = file_name.rfind(".")
             if last_dot != -1:
                 file_name = file_name[0:last_dot]
-            files.append(file_name)
+
+            if file_name not in files:
+                files.append(file_name)
 
     def full_path(self) -> str:
         return f"{self.scheme()}://{self.path}"

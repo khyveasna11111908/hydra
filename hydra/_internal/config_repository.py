@@ -37,8 +37,7 @@ class ConfigRepository:
     ) -> List[str]:
         options: List[str] = []
         for source in self.sources:
-            object_type = source.get_type(config_path=group_name)
-            if object_type == ObjectType.GROUP:
+            if source.is_group(config_path=group_name):
                 options.extend(
                     source.list(config_path=group_name, results_filter=results_filter)
                 )
@@ -50,7 +49,7 @@ class ConfigRepository:
     def _find_config(self, config_path: str) -> Optional[ConfigSource]:
         found_source = None
         for source in self.sources:
-            if source.exists(config_path):
+            if source.is_config(config_path):
                 found_source = source
                 break
         return found_source

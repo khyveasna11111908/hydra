@@ -3,34 +3,46 @@
 from typing import List
 from typing import Optional
 import importlib
-
+import warnings
 from hydra.core.object_type import ObjectType
 from hydra.core.structured_config_store import StructuredConfigStore
-from hydra.plugins.config_source import ConfigSource, ConfigResult
+from hydra.plugins.config_source import ConfigSource, ConfigResult, ConfigLoadError
 
 
 class StructuredConfigSource(ConfigSource):
     def __init__(self, provider: str, path: str) -> None:
         super().__init__(provider=provider, path=path)
         # Import the module, the __init__ there is expected to register the configs.
-        importlib.import_module(self.path)
+        try:
+            importlib.import_module(self.path)
+        except Exception as e:
+            warnings.warn(
+                f"Error importing {self.path} : some configs may not be available\n\n\tRoot cause: {e}\n"
+            )
+            raise e
 
     @staticmethod
     def scheme() -> str:
         return "structured"
 
     def load_config(self, config_path: str) -> ConfigResult:
+        full_path = self._normalize_file_name(config_path)
         return ConfigResult(
-            config=StructuredConfigStore.instance().load(config_path=config_path),
+            config=StructuredConfigStore.instance().load(config_path=full_path),
             path=f"{self.scheme()}://{self.path}",
             provider=self.provider,
         )
 
-    def exists(self, config_path: str) -> bool:
-        return self.get_type(config_path) is not ObjectType.NOT_FOUND
+    def is_group(self, config_path: str) -> bool:
+        type_ = StructuredConfigStore.instance().get_type(config_path.rstrip("/"))
+        return type_ == ObjectType.GROUP
 
-    def get_type(self, config_path: str) -> ObjectType:
-        return StructuredConfigStore.instance().get_type(config_path)
+    def is_config(self, config_path: str) -> bool:
+
+        type_ = StructuredConfigStore.instance().get_type(
+            self._normalize_file_name(config_path.rstrip("/"))
+        )
+        return type_ == ObjectType.CONFIG
 
     def list(self, config_path: str, results_filter: Optional[ObjectType]) -> List[str]:
         ret: List[str] = []
@@ -44,3 +56,11 @@ class StructuredConfigSource(ConfigSource):
                 results_filter=results_filter,
             )
         return ret
+
+    @staticmethod
+    def _normalize_file_name(filename):
+        # strips any extension and adds .config
+        idx = filename.rfind(".")
+        if idx != -1:
+            filename = filename[0:idx]
+        return filename + ".config"

@@ -1,11 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-from typing import Any, Dict, List, Optional
+from os.path import splitext
 
-from omegaconf import DictConfig
+from typing import Any, Dict, List, Optional
 
 from hydra.core.object_type import ObjectType
 from hydra.core.singleton import Singleton
 from hydra.plugins.config_source import ConfigLoadError, ConfigResult, ConfigSource
+from omegaconf import DictConfig
 
 
 class ConfigSourceExample(ConfigSource):
@@ -104,15 +105,23 @@ class ConfigStore(metaclass=Singleton):
 
     def _open(self, path: str) -> Any:
         d: Any = self.store
-        if path == "":
-            return d
-
         for frag in path.split("/"):
             if frag == "":
                 continue
-            if frag not in d:
+            filename_no_ext, ext = splitext(frag)
+            candidates = [frag]
+            if ext is not "":
+                candidates.insert(0, filename_no_ext)
+            match = None
+            for candidate in candidates:
+                if candidate in d:
+                    match = d[candidate]
+                    d = match
+                    break
+
+            if match is None:
                 return None
-            d = d[frag]
+
         return d
 
     @staticmethod
