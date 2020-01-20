@@ -1,9 +1,10 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-from hydra.core.structured_config_store import StructuredConfigStore
 from dataclasses import dataclass
+from typing import Any
+
 from omegaconf import MISSING, OmegaConf
 
-from typing import Any
+from hydra.core.structured_config_store import StructuredConfigStore
 
 
 @dataclass

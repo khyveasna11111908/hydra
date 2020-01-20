@@ -1,12 +1,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-
-from typing import List
-from typing import Optional
 import importlib
 import warnings
+from typing import List, Optional
+
 from hydra.core.object_type import ObjectType
 from hydra.core.structured_config_store import StructuredConfigStore
-from hydra.plugins.config_source import ConfigSource, ConfigResult, ConfigLoadError
+from hydra.plugins.config_source import ConfigResult, ConfigSource
 
 
 class StructuredConfigSource(ConfigSource):
@@ -58,7 +57,7 @@ class StructuredConfigSource(ConfigSource):
         return ret
 
     @staticmethod
-    def _normalize_file_name(filename):
+    def _normalize_file_name(filename: str) -> str:
         idx = filename.rfind(".")
         if idx == -1:
             filename += ".yaml"

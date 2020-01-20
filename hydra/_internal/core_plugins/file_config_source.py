@@ -53,7 +53,7 @@ class FileConfigSource(ConfigSource):
         return sorted(files)
 
     @staticmethod
-    def _normalize_file_name(filename):
+    def _normalize_file_name(filename: str) -> str:
         idx = filename.rfind(".")
         if idx == -1:
             filename += ".yaml"

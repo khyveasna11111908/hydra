@@ -40,7 +40,7 @@ class PackageConfigSource(ConfigSource):
             )
 
     @staticmethod
-    def _exists(module_name, resource_name):
+    def _exists(module_name: str, resource_name: str) -> bool:
         try:
             if resource_exists(module_name, resource_name):
                 return True

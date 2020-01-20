@@ -1,10 +1,11 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
+from omegaconf import DictConfig, OmegaConf
 
 from hydra.core.object_type import ObjectType
 from hydra.core.singleton import Singleton
 from hydra.plugins.config_source import ConfigLoadError
-from omegaconf import DictConfig, OmegaConf
 
 
 class StructuredConfigStore(metaclass=Singleton):

@@ -6,8 +6,8 @@ import pytest
 from hydra._internal.config_repository import ConfigRepository
 from hydra._internal.config_search_path_impl import ConfigSearchPathImpl
 from hydra._internal.core_plugins.file_config_source import FileConfigSource
-from hydra._internal.core_plugins.structured_config_source import StructuredConfigSource
 from hydra._internal.core_plugins.package_config_source import PackageConfigSource
+from hydra._internal.core_plugins.structured_config_source import StructuredConfigSource
 from hydra.core.object_type import ObjectType
 from hydra.core.plugins import Plugins
 from hydra.test_utils.config_source_common_tests import ConfigSourceTestSuite

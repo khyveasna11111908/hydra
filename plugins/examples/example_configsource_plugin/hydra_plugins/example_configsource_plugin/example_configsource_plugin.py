@@ -1,12 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 from os.path import splitext
-
 from typing import Any, Dict, List, Optional
+
+from omegaconf import DictConfig
 
 from hydra.core.object_type import ObjectType
 from hydra.core.singleton import Singleton
 from hydra.plugins.config_source import ConfigLoadError, ConfigResult, ConfigSource
-from omegaconf import DictConfig
 
 
 class ConfigSourceExample(ConfigSource):
@@ -110,7 +110,7 @@ class ConfigStore(metaclass=Singleton):
                 continue
             filename_no_ext, ext = splitext(frag)
             candidates = [frag]
-            if ext is not "":
+            if ext != "":
                 candidates.insert(0, filename_no_ext)
             match = None
             for candidate in candidates:
