@@ -1,129 +1,72 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
-from os.path import splitext
 from typing import Any, Dict, List, Optional
 
-from omegaconf import DictConfig
+from omegaconf import OmegaConf
 
 from hydra.core.object_type import ObjectType
-from hydra.core.singleton import Singleton
 from hydra.plugins.config_source import ConfigLoadError, ConfigResult, ConfigSource
 
 
 class ConfigSourceExample(ConfigSource):
     def __init__(self, provider: str, path: str) -> None:
         super().__init__(provider=provider, path=path)
+        self.configs: Dict[str, Dict[str, Any]] = {
+            "config_without_group": {"group": False},
+            "dataset/imagenet": {
+                "dataset": {"name": "imagenet", "path": "/datasets/imagenet"}
+            },
+            "dataset/cifar10": {
+                "dataset": {"name": "cifar10", "path": "/datasets/cifar10"}
+            },
+        }
 
     @staticmethod
     def scheme() -> str:
         return "example"
 
     def load_config(self, config_path: str) -> ConfigResult:
+        if config_path not in self.configs:
+            raise ConfigLoadError("Config not found : " + config_path)
         return ConfigResult(
-            config=ConfigStore.instance().load(config_path=config_path),
+            config=OmegaConf.create(self.configs[config_path]),
             path=f"{self.scheme()}://{self.path}",
             provider=self.provider,
         )
 
-    def exists(self, config_path: str) -> bool:
-        return self.get_type(config_path) is not ObjectType.NOT_FOUND
+    def is_group(self, config_path: str) -> bool:
+        groups = {
+            "": True,
+            "dataset": True,
+            "optimizer": True,
+            "dataset/imagenet": False,
+            "not_found": False,
+        }
+        return groups[config_path]
 
-    def get_type(self, config_path: str) -> ObjectType:
-        return ConfigStore.instance().get_type(config_path)
+    def is_config(self, config_path: str) -> bool:
+        configs = {
+            "": False,
+            "dataset": True,
+            "optimizer": False,
+            "dataset/imagenet": True,
+            "dataset/imagenet.yaml": True,
+            "dataset/imagenet.foobar": False,
+            "not_found": False,
+        }
+        return configs[config_path]
 
     def list(self, config_path: str, results_filter: Optional[ObjectType]) -> List[str]:
-        ret: List[str] = []
-        files = ConfigStore.instance().list(config_path)
 
-        for file in files:
-            self._list_add_result(
-                files=ret,
-                file_path=f"{config_path}/{file}",
-                file_name=file,
-                results_filter=results_filter,
-            )
-        return ret
-
-
-class ConfigStore(metaclass=Singleton):
-    """
-    Implements a simple in memory config store.
-    """
-
-    store: Dict[str, Any]
-
-    def __init__(self) -> None:
-        self.store = {}
-
-    def mkdir(self, dir_path: str) -> None:
-        assert dir_path.find("/") == -1
-        if dir_path in self.store.keys():
-            raise IOError(f"Already exists: {dir_path}")
-        self.store[dir_path] = {}
-
-    def add(self, path: str, name: str, node: DictConfig) -> None:
-        d = self._open(path)
-        if d is None or not isinstance(d, dict) or name in d:
-            raise ConfigLoadError(f"Error adding {path}")
-
-        d[name] = node
-
-    def load(self, config_path: str) -> DictConfig:
-        idx = config_path.rfind("/")
-        if idx == -1:
-            ret = self._open(config_path)
-            assert isinstance(ret, DictConfig)
-            return ret
+        groups: Dict[str, List[str]] = {"": ["dataset", "optimizer"], "dataset": []}
+        configs = {
+            "": ["config_without_group", "dataset"],
+            "dataset": ["cifar10", "imagenet"],
+        }
+        if results_filter is None:
+            return sorted(groups[config_path] + configs[config_path])
+        elif results_filter == ObjectType.GROUP:
+            return groups[config_path]
+        elif results_filter == ObjectType.CONFIG:
+            return configs[config_path]
         else:
-            path = config_path[0:idx]
-            name = config_path[idx + 1 :]
-            d = self._open(path)
-            if d is None or not isinstance(d, dict) or name not in d:
-                raise ConfigLoadError(f"Error loading {config_path}")
-
-            ret = d[name]
-            assert isinstance(ret, DictConfig)
-            return ret
-
-    def get_type(self, path: str) -> ObjectType:
-        d = self._open(path)
-        if d is None:
-            return ObjectType.NOT_FOUND
-        if isinstance(d, dict):
-            return ObjectType.GROUP
-        else:
-            return ObjectType.CONFIG
-
-    def list(self, path: str) -> List[str]:
-        d = self._open(path)
-        if d is None:
-            raise IOError(f"Path not found {path}")
-
-        if not isinstance(d, dict):
-            raise IOError(f"Path points to a file : {path}")
-
-        return sorted(d.keys())
-
-    def _open(self, path: str) -> Any:
-        d: Any = self.store
-        for frag in path.split("/"):
-            if frag == "":
-                continue
-            filename_no_ext, ext = splitext(frag)
-            candidates = [frag]
-            if ext != "":
-                candidates.insert(0, filename_no_ext)
-            match = None
-            for candidate in candidates:
-                if candidate in d:
-                    match = d[candidate]
-                    d = match
-                    break
-
-            if match is None:
-                return None
-
-        return d
-
-    @staticmethod
-    def instance(*args: Any, **kwargs: Any) -> "ConfigStore":
-        return Singleton.instance(ConfigStore, *args, **kwargs)  # type: ignore
+            raise ValueError()
