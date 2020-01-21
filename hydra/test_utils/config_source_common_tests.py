@@ -56,7 +56,7 @@ class ConfigSourceTestSuite:
         "config_path,results_filter,expected",
         [
             # one dataset is config, and one is group
-            ("", None, ["config_without_group", "dataset", "dataset", "optimizer"]),
+            ("", None, ["config_without_group", "dataset", "optimizer"]),
             ("", ObjectType.GROUP, ["dataset", "optimizer"]),
             ("", ObjectType.CONFIG, ["config_without_group", "dataset"]),
             ("dataset", None, ["cifar10", "imagenet"]),

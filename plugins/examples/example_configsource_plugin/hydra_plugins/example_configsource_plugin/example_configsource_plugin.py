@@ -63,7 +63,7 @@ class ConfigSourceExample(ConfigSource):
             "dataset": ["cifar10", "imagenet"],
         }
         if results_filter is None:
-            return sorted(groups[config_path] + configs[config_path])
+            return sorted(set(groups[config_path] + configs[config_path]))
         elif results_filter == ObjectType.GROUP:
             return groups[config_path]
         elif results_filter == ObjectType.CONFIG:
