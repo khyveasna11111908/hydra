@@ -83,7 +83,7 @@ class PackageConfigSource(ConfigSource):
                 results_filter=results_filter,
             )
 
-        return sorted(files)
+        return sorted(list(set(files)))
 
     @staticmethod
     def _split_module_and_resource(filename: str) -> Tuple[str, str]:

@@ -54,7 +54,7 @@ class StructuredConfigSource(ConfigSource):
                 file_name=file,
                 results_filter=results_filter,
             )
-        return ret
+        return sorted(list(set(ret)))
 
     @staticmethod
     def _normalize_file_name(filename: str) -> str:

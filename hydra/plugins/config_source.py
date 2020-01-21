@@ -90,8 +90,7 @@ class ConfigSource(Plugin):
             if last_dot != -1:
                 file_name = file_name[0:last_dot]
 
-            if file_name not in files:
-                files.append(file_name)
+            files.append(file_name)
 
     def full_path(self) -> str:
         return f"{self.scheme()}://{self.path}"

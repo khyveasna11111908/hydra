@@ -50,7 +50,7 @@ class FileConfigSource(ConfigSource):
                 results_filter=results_filter,
             )
 
-        return sorted(files)
+        return sorted(list(set(files)))
 
     @staticmethod
     def _normalize_file_name(filename: str) -> str:
